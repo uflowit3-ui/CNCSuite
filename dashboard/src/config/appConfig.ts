@@ -234,8 +234,8 @@ export function getIdealCycleTime(): number {
 // ============================================================
 
 export function getCncHubUrl(): string {
-  //return `${getApiBaseUrl()}/hubs/cnc`;
-  return `${getApiBaseUrl()}/hubs/cnc-dashboard`;
+  return `${getApiBaseUrl()}/hubs/cnc`;
+  //return `${getApiBaseUrl()}/hubs/cnc-dashboard`;
 }
 
 // ============================================================
