@@ -664,10 +664,35 @@ function App() {
       }
     };
 
-    const handleMachineChanged = () => {
-      getSelectedMachineId();
+    // const handleMachineChanged = () => {
+    //   getSelectedMachineId();
 
-      void startCncConnection().catch(
+    //   void startCncConnection().catch(
+    //     (error) => {
+    //       console.error(
+    //         "[CNC] Failed to switch machine subscription:",
+    //         error,
+    //       );
+    //     },
+    //   );
+    // };
+
+    const handleMachineChanged = () => {
+      const machineId = getSelectedMachineId();
+
+      if (machineId === null) {
+        console.warn(
+          "[CNC] No selected machine.",
+        );
+
+        return;
+      }
+
+      console.info(
+        `[CNC] Switching SignalR to machine-${machineId}`,
+      );
+
+      void startCncConnection(machineId).catch(
         (error) => {
           console.error(
             "[CNC] Failed to switch machine subscription:",
