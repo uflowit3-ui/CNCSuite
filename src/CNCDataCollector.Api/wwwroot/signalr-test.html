@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CNC SignalR Test</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@microsoft/signalr@8.0.7/dist/browser/signalr.min.js"></script>
+</head>
+
+<body>
+
+    <h2>CNC SignalR Test</h2>
+
+    <div>
+        Connection:
+        <strong id="connectionStatus">Connecting...</strong>
+    </div>
+
+    <hr>
+
+    <pre id="output"></pre>
+
+    <script>
+        const output = document.getElementById("output");
+        const status = document.getElementById("connectionStatus");
+
+        const connection = new signalR.HubConnectionBuilder()
+            .withUrl("/hubs/cnc-dashboard")
+            .withAutomaticReconnect()
+            .build();
+
+        connection.on("MachineSnapshotUpdated", snapshot => {
+
+            output.textContent =
+                JSON.stringify(snapshot, null, 2);
+        });
+
+        connection.start()
+            .then(async () => {
+
+                status.textContent = "Connected";
+
+                // Test machine ID 1
+                await connection.invoke(
+                    "SubscribeToMachine",
+                    1
+                );
+
+                output.textContent =
+                    "Subscribed to machine-1...\n";
+            })
+            .catch(error => {
+
+                status.textContent = "Connection Failed";
+
+                output.textContent =
+                    error.toString();
+            });
+
+    </script>
+
+</body>
+</html>

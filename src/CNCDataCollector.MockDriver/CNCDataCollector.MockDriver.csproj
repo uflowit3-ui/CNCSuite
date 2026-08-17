@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\CNCDataCollector.Core\CNCDataCollector.Core.csproj" />
+    <ProjectReference Include="..\CNCDataCollector.Domain\CNCDataCollector.Domain.csproj" />
+    <ProjectReference Include="..\CNCDataCollector.Shared\CNCDataCollector.Shared.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

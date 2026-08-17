@@ -1,0 +1,95 @@
+.history-page {
+  width: 100%;
+  min-height: 100vh;
+
+  padding: 0 40px 40px;
+
+  background: #0b1120;
+  color: #e5e7eb;
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+
+  padding: 24px 0 18px;
+}
+
+.history-header h1 {
+  margin: 0;
+
+  color: #f8fafc;
+
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.history-header p {
+  margin: 6px 0 0;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+.history-tabs {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  padding: 5px;
+
+  margin-bottom: 22px;
+
+  width: fit-content;
+
+  background: #111827;
+
+  border: 1px solid #1e293b;
+
+  border-radius: 10px;
+}
+
+.history-tab {
+  padding: 10px 20px;
+
+  border-radius: 7px;
+
+  color: #94a3b8;
+
+  text-decoration: none;
+
+  font-size: 12px;
+  font-weight: 700;
+
+  letter-spacing: 0.5px;
+
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
+}
+
+.history-tab:hover {
+  color: #f8fafc;
+}
+
+.history-tab.active {
+  background: #1d4ed8;
+
+  color: #ffffff;
+}
+
+.history-content {
+  width: 100%;
+}
+
+/*
+ * The individual history pages already have their
+ * own page background and spacing.
+ */
+.history-content .machine-history-page,
+.history-content .axis-history-page,
+.history-content .alarm-history-page {
+  padding-top: 0;
+}
