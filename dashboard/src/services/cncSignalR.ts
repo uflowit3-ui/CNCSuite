@@ -35,15 +35,13 @@ type ErrorListener =
 // CONNECTION
 // ============================================================
 
-let connection: HubConnection | null =
-  null;
+let connection: HubConnection | null = null;
 
 // ============================================================
 // MACHINE SUBSCRIPTION
 // ============================================================
 
-let subscribedMachineId: number | null =
-  null;
+let subscribedMachineId: number | null = null;
 
 // ============================================================
 // LISTENERS
@@ -92,9 +90,7 @@ function notifyError(
   const normalizedError =
     error instanceof Error
       ? error
-      : new Error(
-          String(error)
-        );
+      : new Error(String(error));
 
   console.error(
     "CNC SignalR error:",
@@ -104,9 +100,7 @@ function notifyError(
   errorListeners.forEach(
     (listener) => {
       try {
-        listener(
-          normalizedError
-        );
+        listener(normalizedError);
       } catch (listenerError) {
         console.error(
           "SignalR error listener failed:",
@@ -132,6 +126,33 @@ function notifySnapshot(
       }
     }
   );
+}
+
+// ============================================================
+// SELECTED MACHINE
+// ============================================================
+
+function getSelectedMachineIdFromStorage():
+  number | null {
+  try {
+    const stored =
+      localStorage.getItem(
+        "cnc:selectedMachineId"
+      );
+
+    if (!stored) {
+      return null;
+    }
+
+    const machineId = Number(stored);
+
+    return Number.isInteger(machineId) &&
+      machineId > 0
+      ? machineId
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 // ============================================================
@@ -170,14 +191,17 @@ export async function subscribeToMachine(
   if (
     subscribedMachineId !== null
   ) {
+    const previousMachineId =
+      subscribedMachineId;
+
     try {
       await connection.invoke(
         "UnsubscribeFromMachine",
-        subscribedMachineId
+        previousMachineId
       );
 
       console.info(
-        `[CNC SignalR] Unsubscribed from machine-${subscribedMachineId}`
+        `[CNC SignalR] Unsubscribed from machine-${previousMachineId}`
       );
     } catch (error) {
       console.warn(
@@ -261,7 +285,8 @@ export async function unsubscribeFromMachine(
 // RE-SUBSCRIBE AFTER CONNECTION
 // ============================================================
 
-async function resubscribeToMachine(): Promise<void> {
+async function resubscribeToMachine():
+  Promise<void> {
   if (
     subscribedMachineId === null
   ) {
@@ -291,7 +316,8 @@ async function resubscribeToMachine(): Promise<void> {
 // CREATE CONNECTION
 // ============================================================
 
-function createConnection(): HubConnection {
+function createConnection():
+  HubConnection {
   const hubUrl =
     getCncHubUrl();
 
@@ -388,9 +414,7 @@ function createConnection(): HubConnection {
       );
 
       if (error) {
-        notifyError(
-          error
-        );
+        notifyError(error);
       }
     }
   );
@@ -399,30 +423,17 @@ function createConnection(): HubConnection {
 }
 
 // ============================================================
-// SELECTED MACHINE
-// ============================================================
-
-function getSelectedMachineIdFromStorage(): number | null {
-  try {
-    const stored = localStorage.getItem("cnc:selectedMachineId");
-
-    if (!stored) return null;
-
-    const machineId = Number(stored);
-
-    return Number.isInteger(machineId) && machineId > 0
-      ? machineId
-      : null;
-  } catch {
-    return null;
-  }
-}
-
 // START CONNECTION
 // ============================================================
 
-export async function startCncConnection(machineId?: number | null): Promise<void> {
+export async function startCncConnection(
+  machineId?: number | null
+): Promise<void> {
+
+  // ----------------------------------------------------------
   // Already connected
+  // ----------------------------------------------------------
+
   if (
     connection?.state ===
     HubConnectionState.Connected
@@ -435,38 +446,40 @@ export async function startCncConnection(machineId?: number | null): Promise<voi
     if (
       targetMachineId !== null &&
       targetMachineId !== undefined &&
-      subscribedMachineId !== targetMachineId
+      subscribedMachineId !==
+        targetMachineId
     ) {
-      if (subscribedMachineId !== null) {
-        await unsubscribeFromMachine(
-          subscribedMachineId,
-        );
-      }
-
       await subscribeToMachine(
-        targetMachineId,
+        targetMachineId
       );
     }
 
     notifyConnection(true);
+
     return;
   }
 
+  // ----------------------------------------------------------
   // Another start is already running
+  // ----------------------------------------------------------
+
   if (startPromise) {
     return startPromise;
   }
 
+  // ----------------------------------------------------------
+  // Start connection
+  // ----------------------------------------------------------
+
   startPromise =
     (async () => {
       try {
-        // Create connection if necessary
+
         if (!connection) {
           connection =
             createConnection();
         }
 
-        // Avoid duplicate start
         if (
           connection.state !==
           HubConnectionState.Disconnected
@@ -480,32 +493,48 @@ export async function startCncConnection(machineId?: number | null): Promise<voi
           "[CNC SignalR] Connected."
         );
 
+        // ----------------------------------------------------
+        // Determine selected machine
+        // ----------------------------------------------------
+
         const targetMachineId =
           machineId !== undefined
             ? machineId
             : getSelectedMachineIdFromStorage();
 
-        if (targetMachineId !== null) {
+        // ----------------------------------------------------
+        // Subscribe ONLY to selected machine
+        // ----------------------------------------------------
+
+        if (
+          targetMachineId !== null &&
+          targetMachineId !== undefined
+        ) {
           await subscribeToMachine(
-            targetMachineId,
+            targetMachineId
           );
         } else {
           console.warn(
             "[CNC SignalR] No selected machine. Select a machine in Machine Configuration."
           );
         }
-// Subscribe to the default machine.
-        // This will later become dynamic from
-        // the selected machine in the Dashboard.
-        await subscribeToMachine(
-          1
-        );
+
+        // IMPORTANT:
+        // No hard-coded machine-1 subscription here.
+        //
+        // Removed:
+        //
+        // await subscribeToMachine(1);
+        //
+        // The selected machine is now the only
+        // machine subscribed to.
 
         notifyConnection(
           true
         );
 
       } catch (error) {
+
         console.error(
           "[CNC SignalR] Connection failed:",
           error
@@ -519,10 +548,6 @@ export async function startCncConnection(machineId?: number | null): Promise<voi
           error
         );
 
-        /*
-         * Dispose failed connection so the next
-         * start attempt creates a clean connection.
-         */
         try {
           await connection?.stop();
         } catch {
@@ -530,6 +555,7 @@ export async function startCncConnection(machineId?: number | null): Promise<voi
         }
 
         connection = null;
+
         subscribedMachineId =
           null;
 
@@ -548,8 +574,9 @@ export async function startCncConnection(machineId?: number | null): Promise<voi
 // STOP CONNECTION
 // ============================================================
 
-export async function stopCncConnection(): Promise<void> {
-  // If connection doesn't exist
+export async function stopCncConnection():
+  Promise<void> {
+
   if (!connection) {
     subscribedMachineId =
       null;
@@ -562,6 +589,7 @@ export async function stopCncConnection(): Promise<void> {
   }
 
   try {
+
     if (
       connection.state ===
       HubConnectionState.Connected
@@ -592,6 +620,7 @@ export async function stopCncConnection(): Promise<void> {
     }
 
   } catch (error) {
+
     console.error(
       "[CNC SignalR] Stop failed:",
       error
@@ -602,6 +631,7 @@ export async function stopCncConnection(): Promise<void> {
     );
 
   } finally {
+
     connection = null;
 
     subscribedMachineId =
@@ -620,14 +650,16 @@ export async function stopCncConnection(): Promise<void> {
 // CONNECTION STATUS
 // ============================================================
 
-export function isCncConnected(): boolean {
+export function isCncConnected():
+  boolean {
   return (
     connection?.state ===
     HubConnectionState.Connected
   );
 }
 
-export function getCncConnectionState(): HubConnectionState {
+export function getCncConnectionState():
+  HubConnectionState {
   return (
     connection?.state ??
     HubConnectionState.Disconnected
@@ -650,17 +682,11 @@ export function getSubscribedMachineId():
 export function onSnapshot(
   listener: SnapshotListener
 ): () => void {
+
   snapshotListeners.add(
     listener
   );
 
-  /*
-   * Return unsubscribe function.
-   *
-   * This is important for React components because
-   * pages such as Dashboard and MachineDetails
-   * mount/unmount frequently.
-   */
   return () => {
     snapshotListeners.delete(
       listener
@@ -675,13 +701,11 @@ export function onSnapshot(
 export function onConnectionChange(
   listener: ConnectionListener
 ): () => void {
+
   connectionListeners.add(
     listener
   );
 
-  /*
-   * Immediately provide current state.
-   */
   listener(
     isCncConnected()
   );
@@ -700,6 +724,7 @@ export function onConnectionChange(
 export function onConnectionError(
   listener: ErrorListener
 ): () => void {
+
   errorListeners.add(
     listener
   );
@@ -726,6 +751,7 @@ export function getCncConnection():
 
 export async function reconnectCnc():
   Promise<void> {
+
   console.info(
     "[CNC SignalR] Manual reconnect requested."
   );
